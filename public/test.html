@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Test API</title>
+</head>
+<body>
+
+  <h1>Test API</h1>
+  <button id="send">Enviar POST</button>
+
+  <pre id="out">Listo. Esperando click...</pre>
+
+  <script>
+  const out = document.getElementById("out");
+
+  // payload de prueba (podés cambiarlo después)
+  const payload = {
+    anonUserId: "test-003",
+    text: "hola",
+    locale: "es-AR"
+  };
+
+  document.getElementById("send").addEventListener("click", async () => {
+    out.textContent = "Enviando...";
+
+    try {
+      const res = await fetch("/api/interaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+
+      // Si no es JSON, te mostramos lo que vino (HTML / error)
+      try {
+        const json = JSON.parse(text);
+        out.textContent = JSON.stringify(json, null, 2);
+      } catch {
+        out.textContent =
+          "El servidor devolvió algo que NO es JSON:\n\n" +
+          text;
+      }
+    } catch (err) {
+      out.textContent = "Error de red: " + err.message;
+    }
+  });
+  </script>
+
+</body>
+</html>
