@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coach Diario</title>
+
+  <style>
+    body {
+      background: #0f1115;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 500px;
+    }
+
+    h1 {
+  font-size: 28px;
+
+  font-weight: 600;
+
+  margin-bottom: 18px;
+
+  color: #f5f7fb;
+
+  letter-spacing: -0.5px;
+}
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 15px;
+      border-radius: 10px;
+      border: none;
+      background: #f6f8fa;
+      resize: none;
+      font-size: 22px;
+      line-height: 1.6;
+      color: #111827;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .response {
+      display: none;
+      margin-top: 25px;
+      background: #1a1d24;
+      padding: 20px;
+      border-radius: 12px;
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+    .signature {
+  margin-top: 28px;
+
+  color: #5b8cff;
+
+  font-size: 18px;
+
+  font-weight: 500;
+
+  opacity: 0.9;
+}
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1 style="display:none;">
+  Coach Diario
+</h1>
+
+    <textarea
+      id="message"
+      placeholder="Escribí cómo te sentís hoy..."
+    ></textarea>
+
+    <button id="sendButton" type="button">
+      Enviar
+    </button>
+
+    <div id="response" class="response"></div>
+  </div>
+
+  <script>
+    const button = document.getElementById("sendButton");
+    const responseDiv = document.getElementById("response");
+    const messageInput = document.getElementById("message");
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+
+      if (!text) {
+        responseDiv.innerText = "Escribí algo antes de enviar.";
+        responseDiv.style.display = "block";
+        return;
+      }
+
+      responseDiv.innerText = "Procesando...";
+      responseDiv.style.display = "block";
+
+      document.getElementById("message").style.display = "none";
+
+      document.getElementById("sendButton").style.display = "none";
+      button.disabled = true;
+
+      try {
+        const res = await fetch("/api/interaction", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer TEST"
+          },
+          body: JSON.stringify({
+            uid: "usuario_test",
+            email: "test@diario.local",
+            message: text
+          })
+        });
+
+        const data = await res.json();
+        console.log(data);
+
+        if (data.response && data.response.text) {
+          responseDiv.innerHTML = `
+           ${data.response.text}
+
+            <div class="signature">
+             — Coach Diario
+            </div>
+`;
+        } else if (data.message) {
+  responseDiv.innerHTML = `
+${data.message}
+
+<div class="signature">
+Coach Diario
+</div>
+`;
+} else {
+          responseDiv.innerText = "No se pudo generar respuesta.";
+        }
+
+      } catch (err) {
+        console.error(err);
+        responseDiv.innerText = "Error conectando con el servidor.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    button.addEventListener("click", sendMessage);
+  </script>
+</body>
+</html>

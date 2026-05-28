@@ -1,52 +1,257 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <title>Test API</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test API - Coach Diario V1</title>
+
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input { width: 520px; max-width: 95%; padding: 8px; }
+    pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow: auto; max-height: 380px; }
+    .ok { color: green; font-weight: bold; }
+    .warn { color: #b36b00; font-weight: bold; }
+    .bad { color: #b00020; font-weight: bold; }
+    .small { font-size: 12px; opacity: 0.8; }
+  </style>
 </head>
+
 <body>
 
-  <h1>Test API</h1>
-  <button id="send">Enviar POST</button>
+<h1>Test API</h1>
 
-  <pre id="out">Listo. Esperando click...</pre>
+<div class="row">
+  <button id="btnLogin">1) LOGIN Google</button>
+  <button id="btnToday" disabled>2) GET /api/today</button>
+  <button id="btnInteraction" disabled>3) POST /api/interaction</button>
+  <button id="btnLast" disabled>4) GET /api/last</button>
+<button id="btnLogout">5) Cerrar sesión</button>
+<button id="btnSummary">6) GET /api/summary</button>
+</div>
 
-  <script>
-  const out = document.getElementById("out");
+<div style="margin: 12px 0;">
+  <div><b>Texto a enviar:</b></div>
+  <input id="txt" placeholder="Escribí cómo te sentiste hoy..." />
+</div>
 
-  // payload de prueba (podés cambiarlo después)
-  const payload = {
-    anonUserId: "test-003",
-    text: "hola",
-    locale: "es-AR"
+<div style="margin: 12px 0;">
+  <div id="loginStatus" class="warn">No logueado</div>
+  <div id="tokenStatus" class="small">ID Token: NO</div>
+  <div id="todayStatus" class="small"></div>
+</div>
+
+<pre id="out">{}</pre>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBkNfrli8ni_ozXEUt17hl-GZVjuP7rV1U",
+    authDomain: "coach-diario-v1.firebaseapp.com",
+    projectId: "coach-diario-v1",
+    appId: "1:3699793238:web:792c8acd39ad3c681a4af7"
   };
 
-  document.getElementById("send").addEventListener("click", async () => {
-    out.textContent = "Enviando...";
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
 
+  const out = document.getElementById("out");
+  const txt = document.getElementById("txt");
+
+  const loginStatus = document.getElementById("loginStatus");
+  const tokenStatus = document.getElementById("tokenStatus");
+  const todayStatus = document.getElementById("todayStatus");
+
+  const btnLogin = document.getElementById("btnLogin");
+  const btnToday = document.getElementById("btnToday");
+  const btnInteraction = document.getElementById("btnInteraction");
+  
+  const btnLogout = document.getElementById("btnLogout");
+
+const btnSummary = document.getElementById("btnSummary");
+  function print(obj) {
+    out.textContent = JSON.stringify(obj, null, 2);
+  }
+
+  async function readBodySafe(res) {
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return await res.json();
+    }
+    return await res.text();
+  }
+
+  async function apiFetch(path, options = {}) {
+    const user = auth.currentUser;
+    const token = user ? await user.getIdToken(true) : null;
+
+    const headers = { ...(options.headers || {}) };
+
+    if (token) headers["Authorization"] = "Bearer " + token;
+    if (!headers["Content-Type"] && options.body) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const res = await fetch(path, { ...options, headers });
+    const body = await readBodySafe(res);
+
+    return {
+      httpStatus: res.status,
+      ok: res.ok,
+      body
+    };
+  }
+
+  function setLoginUI(user) {
+    if (!user) {
+      loginStatus.className = "warn";
+      loginStatus.textContent = "No logueado";
+      tokenStatus.textContent = "ID Token: NO";
+      todayStatus.textContent = "";
+      btnToday.disabled = true;
+      btnInteraction.disabled = true;
+      btnLast.disabled = true;
+      btnLogout.disabled = true;
+      return;
+    }
+
+    loginStatus.className = "ok";
+    loginStatus.textContent = "Logueado como: " + (user.email || user.uid);
+    tokenStatus.textContent = "ID Token: SI";
+    btnToday.disabled = false;
+    btnLast.disabled = false;
+    btnInteraction.disabled = true;
+    btnLogout.disabled = false;
+  }
+
+  function setTodayUI(todayInfo) {
+    if (!todayInfo || todayInfo.status !== "OK") {
+      todayStatus.className = "bad";
+      todayStatus.textContent = "Error consultando estado diario";
+      btnInteraction.disabled = false;
+      return;
+    }
+
+    const can = !!todayInfo.canInteract;
+
+    todayStatus.className = can ? "ok" : "warn";
+    todayStatus.textContent =
+      "Hoy: " + todayInfo.today +
+      " | canInteract: " + (can ? "SI" : "NO (ya hiciste la de hoy)");
+
+    btnInteraction.disabled = !can;
+  }
+
+  btnLogin.addEventListener("click", async () => {
     try {
-      const res = await fetch("/api/interaction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      await auth.signInWithPopup(provider);
+      const user = auth.currentUser;
+      setLoginUI(user);
 
-      const text = await res.text();
-
-      // Si no es JSON, te mostramos lo que vino (HTML / error)
-      try {
-        const json = JSON.parse(text);
-        out.textContent = JSON.stringify(json, null, 2);
-      } catch {
-        out.textContent =
-          "El servidor devolvió algo que NO es JSON:\n\n" +
-          text;
-      }
-    } catch (err) {
-      out.textContent = "Error de red: " + err.message;
+      const r = await apiFetch("/api/today");
+      print(r);
+      if (r.ok) setTodayUI(r.body);
+    } catch (e) {
+      print({ status: "ERROR", message: e.message });
     }
   });
-  </script>
+
+  btnToday.addEventListener("click", async () => {
+    const r = await apiFetch("/api/today");
+    print(r);
+    if (r.ok) setTodayUI(r.body);
+  });
+
+  btnInteraction.addEventListener("click", async () => {
+    if (btnInteraction.disabled) {
+      print({
+        status: "blocked",
+        message: "Ya realizaste tu interacción de hoy. Volvé mañana."
+      });
+      return;
+    }
+
+    const r = await apiFetch("/api/interaction", {
+      method: "POST",
+      body: JSON.stringify({ text: txt.value })
+    });
+
+    print(r);
+
+    const t = await apiFetch("/api/today");
+    if (t.ok) setTodayUI(t.body);
+  });
+
+  btnLast.addEventListener("click", async () => {
+    const r = await apiFetch("/api/last");
+    print(r);
+  });
+btnLogout.addEventListener("click", async () => {
+  try {
+    console.log("CLICK LOGOUT");
+
+    await firebase.auth().signOut();
+
+    console.log("LOGOUT OK");
+
+    window.location.reload();
+
+  } catch (e) {
+    console.error("LOGOUT ERROR:", e);
+    print({
+      status: "ERROR",
+      message: e.message
+    });
+  }
+});
+
+btnSummary.addEventListener("click", async () => {
+  const r = await apiFetch("/api/summary");
+  print(r);
+});
+
+document.getElementById("btnLogout").onclick = async () => {
+
+  await firebase.auth().signOut();
+
+  loginStatus.className = "warn";
+  loginStatus.textContent = "No logueado";
+
+  tokenStatus.textContent = "ID Token: NO";
+  todayStatus.textContent = "";
+
+  btnToday.disabled = true;
+  btnInteraction.disabled = true;
+  btnLast.disabled = true;
+
+  print({
+    status: "OK",
+    message: "Sesión cerrada"
+  });
+
+};
+async function testSummary() {
+  const token = await auth.currentUser.getIdToken();
+
+  const res = await fetch("/api/summary", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  console.log(data);
+
+  document.getElementById("response").textContent =
+    JSON.stringify(data, null, 2);
+}
+</script>
 
 </body>
 </html>

@@ -1,13 +1,56 @@
+console.log("🔥🔥🔥 SERVER NUEVO CARGADO 🔥🔥🔥");
+
 const express = require("express");
 const cors = require("cors");
-const { db } = require("./src/config/firebase");
-const { categorizeText } = require("./src/logic/categorize");
-const { pickMicroAction } = require("./src/logic/microactions");
+const { db, admin } = require("./src/config/firebase");
+const { FieldValue } = require("firebase-admin/firestore");
+const { detectRisk } = require("./src/logic/risk");
+const { detectCategory } = require("./src/logic/categorize");
+const { detectIntensity } = require("./src/logic/intensity");
+const { generateMicroAction } = require("./src/logic/microactions");
+const { analyzeUserState } = require("./src/logic/analyzeUserState");
+const { buildEmotionalContext } = require("./src/logic/buildEmotionalContext");
+const { buildResponse } = require("./src/logic/buildResponse");
+const { detectInterventionStrategy } = require("./src/logic/intervention");
+
 const app = express();
 
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json());
+
+function getToday() {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
+
+async function requireAuth(req, res, next) {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+
+    if (!token) {
+      return res.status(401).json({ status: "ERROR", message: "Falta token" });
+    }
+
+    if (token === "TEST") {
+  req.user = {
+    uid: "usuario_test",
+    email: "test@diario.local"
+  };
+
+  return next();
+}
+
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error("AUTH ERROR:", err);
+    return res.status(401).json({ status: "ERROR", message: "Token inválido" });
+  }
+}
 
 app.get("/", (req, res) => {
   res.send("Coach Diario V1 funcionando");
@@ -16,92 +59,498 @@ app.get("/", (req, res) => {
 app.get("/test", (req, res) => {
   res.json({ status: "OK", message: "Endpoint /test funcionando" });
 });
-app.get("/dbtest", async (req, res) => {
+
+app.get("/admin/ping", async (req, res) => {
   try {
-    const ref = db.collection("test").doc("ping");
-    await ref.set({
+    await db.collection("test").doc("ping").set({
       ok: true,
-      createdAt: new Date().toISOString()
+      createdAt: FieldValue.serverTimestamp(),
     });
 
-    const snap = await ref.get();
-    return res.json({ status: "OK", data: snap.data() });
+    const snap = await db.collection("test").doc("ping").get();
+
+    return res.json({
+      status: "OK",
+      data: snap.data(),
+    });
   } catch (err) {
-    console.error(err);
+    console.error("PING ERROR:", err);
     return res.status(500).json({
       status: "ERROR",
-      message: err.message
+      message: err.message,
     });
   }
 });
-app.post("/api/interaction", async (req, res) => {
-  const { anonUserId, text, locale } = req.body;
 
-  if (!anonUserId || !text) {
-    return res.status(400).json({
-      status: "ERROR",
-      message: "Falta anonUserId o text",
-    });
-  }
+app.get("/api/me", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const snap = await db.collection("users").doc(uid).get();
 
-  const today = new Date().toISOString().split("T")[0];
+    if (!snap.exists) {
+      return res.status(404).json({
+        status: "ERROR",
+        message: "User no encontrado",
+      });
+    }
 
-  const existing = await db
-    .collection("interactions")
-    .where("anonUserId", "==", anonUserId)
-    .where("date", "==", today)
-    .get();
-
-  if (!existing.empty) {
     return res.json({
-      status: "blocked",
-      message: "Ya realizaste tu interacción de hoy. Volvé mañana.",
+      status: "OK",
+      user: snap.data(),
+    });
+  } catch (err) {
+    console.error("ME ERROR:", err);
+    return res.status(500).json({
+      status: "ERROR",
+      message: err.message,
     });
   }
-  //Categorizacion Automatica
-  const { category, scores } = categorizeText(text);
+});
 
-// Traer las últimas 2 acciones para no repetir (si hay)
-const last2 = await db
-  .collection("interactions")
-  .where("anonUserId", "==", anonUserId)
-  .orderBy("createdAt", "desc")
-  .limit(2)
-  .get();
+app.get("/api/today", requireAuth, async (req, res) => {
+  try {
+   const uid = req.user.uid;
+    const today = getToday();
+    const interactionId = `${uid}_${today}`;
 
-let lastCode = null;
-let prevCode = null;
+    const snap = await db.collection("interactions").doc(interactionId).get();
 
-if (!last2.empty) {
-  lastCode = last2.docs[0].data()?.result?.actionCode || null;
-  if (last2.docs.length > 1) prevCode = last2.docs[1].data()?.result?.actionCode || null;
-}
+    return res.json({
+      status: "OK",
+      today,
+      canInteract: !snap.exists,
+    });
+  } catch (err) {
+    console.error("TODAY ERROR:", err);
+    return res.status(500).json({
+      status: "ERROR",
+      message: err.message,
+    });
+  }
+});
 
-const micro = pickMicroAction(category, lastCode, prevCode);
+app.get("/api/summary", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
 
-  await db.collection("interactions").add({
-    anonUserId,
-    text,
-    locale: locale || "es-AR",
-    date: today,
-    createdAt: new Date().toISOString(),
- result: {
-  category,
-  actionCode: micro.code,
-  actionText: micro.text,
-  scores // interno
+    const snapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(30)
+      .get();
+
+    const interactions = [];
+
+    snapshot.forEach((doc) => {
+      interactions.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    const categoryCount = {};
+    let totalIntensity = 0;
+    let intensityItems = 0;
+
+    interactions.forEach((item) => {
+      const category = item?.category?.category || "general";
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+
+      if (item?.intensity?.score) {
+        totalIntensity += item.intensity.score;
+        intensityItems++;
+      }
+    });
+
+    const averageIntensity =
+      intensityItems > 0 ? totalIntensity / intensityItems : 0;
+
+    return res.json({
+      ok: true,
+      totalInteractions: interactions.length,
+      categoryCount,
+      averageIntensity,
+      latestInteraction: interactions[0] || null,
+      interactions,
+    });
+  } catch (error) {
+    console.error("Error en /api/summary:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo generar el resumen.",
+    });
+  }
+});
+
+app.post("/api/interaction", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const email = "test@diario.local";
+    const name = "Usuario Test";
+    const photoURL = null;
+
+    const message = req.body.text || req.body.message;
+
+    if (!message || !String(message).trim()) {
+      return res.status(400).json({
+        status: "ERROR",
+        message: "El campo text o message es obligatorio",
+      });
+    }
+
+    const today = getToday();
+    const interactionId = `${uid}_${today}`;
+
+    const interactionRef = db.collection("interactions").doc(interactionId);
+    const existing = await interactionRef.get();
+
+    if (existing.exists) {
+      return res.json({
+        status: "blocked",
+        message: "Ya realizaste tu interacción de hoy. Volvé mañana.",
+      });
+    }
+
+    const userRef = db.collection("users").doc(uid);
+    const snapUser = await userRef.get();
+
+    const userBase = {
+      uid,
+      email,
+      name,
+      photoURL,
+      lastLoginAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    if (!snapUser.exists) {
+      userBase.createdAt = FieldValue.serverTimestamp();
+    }
+
+    await userRef.set(userBase, { merge: true });
+
+    const riskResult = detectRisk(message);
+
+    if (riskResult.hasRisk) {
+      await interactionRef.set({
+        uid,
+        email,
+        date: today,
+        text: String(message).trim(),
+        risk: riskResult,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      return res.json({
+        status: "RISK",
+        ok: true,
+        risk: riskResult,
+        response: {
+          text:
+            "Lo que escribiste suena importante y no conviene que lo atravieses en soledad. Hablá con una persona de confianza o con un profesional de salud mental. Si sentís que podés estar en peligro inmediato, contactá a emergencias de tu zona ahora.",
+          shouldStopInteraction: true,
+        },
+      });
+    }
+
+    const categoryResult = detectCategory(message);
+    const intensityResult = detectIntensity(message);
+
+    const evolutionSnapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(5)
+      .get();
+
+    const recentHistory = [];
+
+    evolutionSnapshot.forEach((doc) => {
+      recentHistory.push(doc.data());
+    });
+
+    const repeatedCategoryCount = recentHistory.filter(
+      (item) => item.category?.category === categoryResult.category
+    ).length;
+
+    const hasRepeatedPattern = repeatedCategoryCount >= 3;
+
+    const lastInteraction = recentHistory[0];
+
+    let evolutionTrend = "stable";
+
+    if (lastInteraction?.intensity?.score) {
+      const previousScore = lastInteraction.intensity.score;
+      const currentScore = intensityResult.score;
+
+      if (currentScore > previousScore) {
+        evolutionTrend = "worse";
+      }
+
+      if (currentScore < previousScore) {
+        evolutionTrend = "better";
+      }
+    }
+const emotionalContext = buildEmotionalContext(recentHistory);
+
+    const interventionStrategy = detectInterventionStrategy({
+      category: categoryResult.category,
+      intensity: intensityResult.intensity,
+      hasRepeatedPattern,
+      evolutionTrend,
+    });
+
+   const analysisResult = analyzeUserState({
+  message,
+  categoryResult,
+  intensityResult,
+  hasRepeatedPattern,
+  evolutionTrend,
+});
+
+const microAction = generateMicroAction(
+  categoryResult.category,
+  intensityResult.intensity,
+  analysisResult
+);   
+
+  const finalResponse = buildResponse(
+  categoryResult,
+  microAction,
+  hasRepeatedPattern,
+  evolutionTrend,
+  analysisResult,
+  emotionalContext
+);
+
+    await interactionRef.set({
+      uid,
+      email,
+      date: today,
+      pilotVersion: "personal-30d-v1",
+      feedback: {
+  useful: null,
+  note: null,
 },
-  });
+      text: String(message).trim(),
+      risk: riskResult,
+      category: categoryResult,
+      intensity: intensityResult,
+      microAction,
+      response: finalResponse,
+      hasRepeatedPattern,
+      evolutionTrend,
+      interventionStrategy,
+      analysis: analysisResult,
+      emotionalContext,
+      createdAt: FieldValue.serverTimestamp(),
+    
+    });
 
-  return res.json({
-  status: "OK",
-  microAction: {
-    category,
-    actionCode: micro.code,
-    actionText: micro.text,
-  },
+    return res.json({
+      status: "OK",
+      ok: true,
+      id: interactionId,
+      risk: riskResult,
+      category: categoryResult,
+      intensity: intensityResult,
+      microAction,
+      response: finalResponse,
+      hasRepeatedPattern,
+      evolutionTrend,
+      interventionStrategy,
+      analysis: analysisResult,
+      emotionalContext,
 });
+  } catch (err) {
+    console.error("INTERACTION ERROR:", err);
+    return res.status(500).json({
+      status: "ERROR",
+      message: err.message,
+    });
+  }
 });
+
+app.get("/api/last", async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const snap = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      return res.json({
+        status: "OK",
+        last: null,
+      });
+    }
+
+    return res.json({
+      status: "OK",
+      last: {
+        id: snap.docs[0].id,
+        ...snap.docs[0].data(),
+      },
+    });
+  } catch (err) {
+    console.error("LAST ERROR:", err);
+    return res.status(500).json({
+      status: "ERROR",
+      message: err.message,
+    });
+  }
+});
+
+app.get("/api/history/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const snapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(20)
+      .get();
+
+    const history = [];
+
+    snapshot.forEach((doc) => {
+      history.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    return res.json({
+      ok: true,
+      total: history.length,
+      history,
+    });
+  } catch (error) {
+    console.error("HISTORY ERROR:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/stats/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const snapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .get();
+
+    const stats = {
+      total: 0,
+      categories: {},
+      intensities: {},
+    };
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      stats.total += 1;
+
+      const category = data.category?.category || "unknown";
+      const intensity = data.intensity?.intensity || "unknown";
+
+      stats.categories[category] = (stats.categories[category] || 0) + 1;
+      stats.intensities[intensity] = (stats.intensities[intensity] || 0) + 1;
+    });
+
+    return res.json({
+      ok: true,
+      uid,
+      stats,
+    });
+  } catch (error) {
+    console.error("STATS ERROR:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/evolution/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const snapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(7)
+      .get();
+
+    const history = [];
+
+    snapshot.forEach((doc) => {
+      history.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    const categories = {};
+    const intensities = {};
+
+    history.forEach((item) => {
+      const category = item.category?.category || "unknown";
+      const intensity = item.intensity?.intensity || "unknown";
+
+      categories[category] = (categories[category] || 0) + 1;
+      intensities[intensity] = (intensities[intensity] || 0) + 1;
+    });
+
+    const mostRepeatedCategory =
+      Object.entries(categories).sort((a, b) => b[1] - a[1])[0] || null;
+
+    const mostRepeatedIntensity =
+      Object.entries(intensities).sort((a, b) => b[1] - a[1])[0] || null;
+
+    const last = history[0] || null;
+
+    return res.json({
+      ok: true,
+      uid,
+      totalAnalyzed: history.length,
+      lastCategory: last?.category?.category || null,
+      lastIntensity: last?.intensity?.intensity || null,
+      mostRepeatedCategory: mostRepeatedCategory
+        ? {
+            category: mostRepeatedCategory[0],
+            count: mostRepeatedCategory[1],
+          }
+        : null,
+      mostRepeatedIntensity: mostRepeatedIntensity
+        ? {
+            intensity: mostRepeatedIntensity[0],
+            count: mostRepeatedIntensity[1],
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("EVOLUTION ERROR:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
 const PORT = 3000;
 
 app.listen(PORT, () => {

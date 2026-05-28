@@ -1,55 +1,152 @@
-// src/logic/microactions.js
+function generateMicroAction(
+  category = "general",
+  intensity = "baja",
+  analysisResult = null
+) {
+  const cognitiveLoad = analysisResult?.cognitiveLoad || "media";
 
-const BANK = {
-  ECONOMICO: [
-    { code: "ECO01", text: "Anotar todos los gastos realizados en las últimas 24 horas." },
-    { code: "ECO02", text: "Revisar tu saldo actual sin hacer ningún juicio." },
-    { code: "ECO03", text: "Identificar un gasto pequeño que puedas evitar esta semana." },
-    { code: "ECO04", text: "Escribir una fuente potencial de ingreso que podrías explorar." },
-    { code: "ECO05", text: "Ordenar tus deudas por monto de menor a mayor." }
-  ],
-  RELACIONES: [
-    { code: "REL01", text: "Enviar un mensaje breve y genuino a alguien importante para ti." },
-    { code: "REL02", text: "Identificar qué parte del conflicto depende de ti y cuál no." },
-    { code: "REL03", text: "Agradecer algo concreto a una persona cercana." },
-    { code: "REL04", text: "Escuchar a alguien durante 10 minutos sin interrumpir." },
-    { code: "REL05", text: "Escribir lo que realmente quieres comunicar antes de decirlo." }
-  ],
-  DESORDEN: [
-    { code: "DES01", text: "Elegir una sola cosa para ordenar hoy y escribir cuál es." },
-    { code: "DES02", text: "Anotar tres pendientes y marcar uno como prioridad." },
-    { code: "DES03", text: "Definir el próximo paso en una frase (algo realizable hoy)." },
-    { code: "DES04", text: "Identificar qué te interrumpe más hoy (en una frase)." },
-    { code: "DES05", text: "Cerrar una tarea mínima de 10 minutos y darla por terminada." }
-  ],
-  EXISTENCIAL: [
-    { code: "EXI01", text: "Escribir qué actividad reciente te dio más energía de la que te quitó." },
-    { code: "EXI02", text: "Definir una meta pequeña para esta semana." },
-    { code: "EXI03", text: "Identificar algo que te gustaría aprender en los próximos meses." },
-    { code: "EXI04", text: "Escribir tres cosas que valoras en tu vida actual." },
-    { code: "EXI05", text: "Dedicar 15 minutos a una actividad que te acerque a algo que te importa." }
-  ],
-  PERDIDA: [
-    { code: "PER01", text: "Escribir una frase sobre lo que más extrañás." },
-    { code: "PER02", text: "Escribir una frase sobre algo lindo que te dejó." },
-    { code: "PER03", text: "Escribir: 'Hoy me permito…' y completar con una sola cosa." },
-    { code: "PER04", text: "Nombrar una persona o lugar que te haría bien hoy (en una frase)." },
-    { code: "PER05", text: "Escribir una frase de despedida, como salga." }
-  ],
-  EMOCIONAL: [
-    { code: "EMO01", text: "Escribir en una frase qué emoción predomina ahora mismo." },
-    { code: "EMO02", text: "Practicar respiración lenta durante 3 minutos (inhalar 4, exhalar 6)." },
-    { code: "EMO03", text: "Escribir tres pensamientos que estén ocupando tu mente ahora." },
-    { code: "EMO04", text: "Separar en una hoja: hechos vs interpretaciones sobre lo que te preocupa." },
-    { code: "EMO05", text: "Identificar una emoción y nombrarla sin intentar cambiarla." }
-  ],
-};
+  const interventionStrategy =
+    analysisResult?.interventionStrategy || "accion simple";
 
-function pickMicroAction(category, lastCode = null, prevCode = null) {
-  const list = BANK[category] || BANK.EMOCIONAL;
-  const filtered = list.filter(a => a.code !== lastCode && a.code !== prevCode);
-  const pool = filtered.length ? filtered : list;
-  return pool[Math.floor(Math.random() * pool.length)];
+  if (interventionStrategy === "cortar ciclo mental") {
+    return {
+      type: "descarga",
+      action:
+        "Escribí una sola idea que esté dando vueltas en tu cabeza y dejala ahí por hoy.",
+      duration: "3 minutos",
+    };
+  }
+
+  if (
+    cognitiveLoad === "alta" &&
+    category !== "rumiacion"
+  ) {
+    return {
+      type: "regulacion",
+      action:
+        "No intentes resolver todo ahora. Elegí una sola cosa chica para hacer.",
+      duration: "5 minutos",
+    };
+  }
+
+  if (interventionStrategy === "reducir estimulos") {
+    return {
+      type: "regulacion",
+      action:
+        "Intentá alejarte unos minutos del ruido y darte un poco de espacio.",
+      duration: "10 minutos",
+    };
+  }
+
+  switch (category) {
+    case "economico":
+      if (intensity === "alta") {
+        return {
+          type: "regulacion",
+          action:
+            "No intentes resolver toda tu economía hoy. Elegí un solo tema económico para mirar con calma.",
+          duration: "3 minutos",
+        };
+      }
+
+      return {
+        type: "claridad",
+        action:
+          "Anotá qué tema económico te preocupa más hoy y una acción chica que puedas hacer.",
+        duration: "5 minutos",
+      };
+
+    case "ansiedad":
+      if (intensity === "alta") {
+        return {
+          type: "regulacion",
+          action:
+            "No hace falta resolver todo ahora. Mirá alrededor y nombrá tres cosas que veas.",
+          duration: "2 minutos",
+        };
+      }
+
+      return {
+        type: "descarga",
+        action:
+          "Escribí qué es lo que más te preocupa hoy. Solo una cosa.",
+        duration: "3 minutos",
+      };
+
+    case "saturacion":
+      if (intensity === "alta") {
+        return {
+          type: "reduccion",
+          action:
+            "No intentes ordenar todo. Elegí una sola cosa para hacer hoy.",
+          duration: "2 minutos",
+        };
+      }
+
+      return {
+        type: "claridad",
+        action:
+          "Pensá qué es lo que más espacio ocupa en tu cabeza y elegí una sola prioridad.",
+        duration: "3 minutos",
+      };
+
+    case "frustracion":
+      if (intensity === "alta") {
+        return {
+          type: "regulacion",
+          action:
+            "Por hoy no hace falta demostrar nada. Soltá una exigencia aunque sea por un rato.",
+          duration: "3 minutos",
+        };
+      }
+
+      return {
+        type: "descarga",
+        action:
+          "Escribí qué fue lo que más te molestó hoy.",
+        duration: "3 minutos",
+      };
+
+    case "desorientacion":
+      return {
+        type: "claridad",
+        action:
+          "Elegí una sola cosa que sí tengas clara hoy y empezá por ahí.",
+        duration: "2 minutos",
+      };
+
+    case "rumiacion":
+      return {
+        type: "descarga_mental",
+        action:
+          "Escribí una idea que se esté repitiendo mucho y dejala ahí por hoy.",
+        duration: "2 minutos",
+      };
+
+    case "indecision":
+      return {
+        type: "decision_minima",
+        action:
+          "Elegí una opción posible y permitite avanzar un poco.",
+        duration: "1 minuto",
+      };
+
+    case "agotamiento":
+      return {
+        type: "pausa",
+        action:
+          "Intentá bajar el ritmo unos minutos sin intentar resolver nada.",
+        duration: "5 minutos",
+      };
+
+    default:
+      return {
+        type: "micro_paso",
+        action:
+          "Elegí una sola cosa chica para hacer hoy y dejá el resto para después.",
+        duration: "3 minutos",
+      };
+  }
 }
 
-module.exports = { BANK, pickMicroAction };
+module.exports = { generateMicroAction };
