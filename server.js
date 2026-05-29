@@ -2,6 +2,7 @@ console.log("🔥🔥🔥 SERVER NUEVO CARGADO 🔥🔥🔥");
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { db, admin } = require("./src/config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
 const { detectRisk } = require("./src/logic/risk");
@@ -53,7 +54,7 @@ async function requireAuth(req, res, next) {
 }
 
 app.get("/", (req, res) => {
-  res.send("Coach Diario V1 funcionando");
+  res.sendFile(path.join(__dirname, "public", "coach.html"));
 });
 
 app.get("/test", (req, res) => {
