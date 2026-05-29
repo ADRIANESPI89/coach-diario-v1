@@ -2,10 +2,10 @@ const admin = require("firebase-admin");
 const path = require("path");
 
 // Ruta al JSON (relativa a ESTE archivo)
-const serviceAccountPath = path.join(
-  __dirname,
-  "../../secrets/firebase-service-account.json"
-);
+const serviceAccountPath =
+  process.env.RENDER
+    ? "/etc/secrets/firebase-service-account.json"
+    : path.join(__dirname, "../../secrets/firebase-service-account.json");
 
 const serviceAccount = require(serviceAccountPath);
 
