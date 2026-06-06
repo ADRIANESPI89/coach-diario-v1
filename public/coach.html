@@ -10,7 +10,7 @@
       background: #0f1115;
       color: white;
       font-family: Arial, sans-serif;
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
@@ -20,14 +20,6 @@
     .container {
       width: 90%;
       max-width: 500px;
-    }
-
-    h1 {
-      font-size: 28px;
-      font-weight: 600;
-      margin-bottom: 18px;
-      color: #f5f7fb;
-      letter-spacing: -0.5px;
     }
 
     textarea {
@@ -82,10 +74,8 @@
   </style>
 </head>
 
-<body style="display:none;">
+<body>
   <div class="container">
-    <h1 style="display:none;">Coach Diario</h1>
-
     <textarea
       id="message"
       placeholder="Escribí cómo te sentís hoy..."
@@ -117,14 +107,46 @@
     const responseDiv = document.getElementById("response");
     const messageInput = document.getElementById("message");
 
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = "/login.html";
-        return;
-      }
+   auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    window.location.href = "/login.html";
+    return;
+  }
 
-      document.body.style.display = "flex";
+  document.body.style.display = "flex";
+
+  try {
+    const token = await user.getIdToken(true);
+
+    const res = await fetch("/api/today", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
     });
+
+    const data = await res.json();
+
+    if (data.status === "OK" && data.canInteract === false) {
+      messageInput.style.display = "none";
+      button.style.display = "none";
+
+      responseDiv.innerHTML = `
+La interacción de hoy ya terminó.
+
+Con una sola acción es suficiente por hoy. Lo importante ahora es ponerla en práctica y observar qué sucede.
+
+<div class="signature">
+Coach Diario
+</div>
+`;
+      responseDiv.style.display = "block";
+    }
+
+  } catch (err) {
+    console.error("TODAY CHECK ERROR:", err);
+  }
+});
 
     async function sendMessage() {
       const text = messageInput.value.trim();
