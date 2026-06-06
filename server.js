@@ -121,7 +121,7 @@ if (existing.exists) {
   return res.json({
     status: "blocked",
     message:
-      `La interacción de hoy ya terminó.\n\nAcción sugerida para hoy:\n"${previousAction}"\n\nLo importante ahora es ponerla en práctica y observar qué sucede.`,
+  `La interacción de hoy ya terminó.\n\nAcción sugerida para hoy:\n"${previousAction}"\n\nCon una sola acción es suficiente por hoy. Lo importante ahora es ponerla en práctica y observar qué sucede.`,
   });
 }
 
