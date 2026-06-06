@@ -3,8 +3,10 @@ console.log("🔥🔥🔥 SERVER NUEVO CARGADO 🔥🔥🔥");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+
 const { db, admin } = require("./src/config/firebase");
 const { FieldValue } = require("firebase-admin/firestore");
+
 const { detectRisk } = require("./src/logic/risk");
 const { detectCategory } = require("./src/logic/categorize");
 const { detectIntensity } = require("./src/logic/intensity");
@@ -32,24 +34,21 @@ async function requireAuth(req, res, next) {
     const token = header.startsWith("Bearer ") ? header.slice(7) : null;
 
     if (!token) {
-      return res.status(401).json({ status: "ERROR", message: "Falta token" });
+      return res.status(401).json({
+        status: "ERROR",
+        message: "Falta token",
+      });
     }
-
-    if (token === "TEST") {
-  req.user = {
-    uid: "usuario_test",
-    email: "test@diario.local"
-  };
-
-  return next();
-}
 
     const decoded = await admin.auth().verifyIdToken(token);
     req.user = decoded;
-    next();
+    return next();
   } catch (err) {
     console.error("AUTH ERROR:", err);
-    return res.status(401).json({ status: "ERROR", message: "Token inválido" });
+    return res.status(401).json({
+      status: "ERROR",
+      message: "Token inválido",
+    });
   }
 }
 
@@ -58,10 +57,13 @@ app.get("/", (req, res) => {
 });
 
 app.get("/test", (req, res) => {
-  res.json({ status: "OK", message: "Endpoint /test funcionando" });
+  res.json({
+    status: "OK",
+    message: "Endpoint /test funcionando",
+  });
 });
 
-app.get("/admin/ping", async (req, res) => {
+app.get("/admin/ping", requireAuth, async (req, res) => {
   try {
     await db.collection("test").doc("ping").set({
       ok: true,
@@ -88,16 +90,9 @@ app.get("/api/me", requireAuth, async (req, res) => {
     const uid = req.user.uid;
     const snap = await db.collection("users").doc(uid).get();
 
-    if (!snap.exists) {
-      return res.status(404).json({
-        status: "ERROR",
-        message: "User no encontrado",
-      });
-    }
-
     return res.json({
       status: "OK",
-      user: snap.data(),
+      user: snap.exists ? snap.data() : null,
     });
   } catch (err) {
     console.error("ME ERROR:", err);
@@ -110,7 +105,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
 
 app.get("/api/today", requireAuth, async (req, res) => {
   try {
-   const uid = req.user.uid;
+    const uid = req.user.uid;
     const today = getToday();
     const interactionId = `${uid}_${today}`;
 
@@ -176,7 +171,7 @@ app.get("/api/summary", requireAuth, async (req, res) => {
       interactions,
     });
   } catch (error) {
-    console.error("Error en /api/summary:", error);
+    console.error("SUMMARY ERROR:", error);
     return res.status(500).json({
       ok: false,
       error: "No se pudo generar el resumen.",
@@ -187,9 +182,9 @@ app.get("/api/summary", requireAuth, async (req, res) => {
 app.post("/api/interaction", requireAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
-    const email = "test@diario.local";
-    const name = "Usuario Test";
-    const photoURL = null;
+    const email = req.user.email || null;
+    const name = req.user.name || null;
+    const photoURL = req.user.picture || null;
 
     const message = req.body.text || req.body.message;
 
@@ -285,15 +280,11 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
       const previousScore = lastInteraction.intensity.score;
       const currentScore = intensityResult.score;
 
-      if (currentScore > previousScore) {
-        evolutionTrend = "worse";
-      }
-
-      if (currentScore < previousScore) {
-        evolutionTrend = "better";
-      }
+      if (currentScore > previousScore) evolutionTrend = "worse";
+      if (currentScore < previousScore) evolutionTrend = "better";
     }
-const emotionalContext = buildEmotionalContext(recentHistory);
+
+    const emotionalContext = buildEmotionalContext(recentHistory);
 
     const interventionStrategy = detectInterventionStrategy({
       category: categoryResult.category,
@@ -302,28 +293,28 @@ const emotionalContext = buildEmotionalContext(recentHistory);
       evolutionTrend,
     });
 
-   const analysisResult = analyzeUserState({
-  message,
-  categoryResult,
-  intensityResult,
-  hasRepeatedPattern,
-  evolutionTrend,
-});
+    const analysisResult = analyzeUserState({
+      message,
+      categoryResult,
+      intensityResult,
+      hasRepeatedPattern,
+      evolutionTrend,
+    });
 
-const microAction = generateMicroAction(
-  categoryResult.category,
-  intensityResult.intensity,
-  analysisResult
-);   
+    const microAction = generateMicroAction(
+      categoryResult.category,
+      intensityResult.intensity,
+      analysisResult
+    );
 
-  const finalResponse = buildResponse(
-  categoryResult,
-  microAction,
-  hasRepeatedPattern,
-  evolutionTrend,
-  analysisResult,
-  emotionalContext
-);
+    const finalResponse = buildResponse(
+      categoryResult,
+      microAction,
+      hasRepeatedPattern,
+      evolutionTrend,
+      analysisResult,
+      emotionalContext
+    );
 
     await interactionRef.set({
       uid,
@@ -331,9 +322,9 @@ const microAction = generateMicroAction(
       date: today,
       pilotVersion: "personal-30d-v1",
       feedback: {
-  useful: null,
-  note: null,
-},
+        useful: null,
+        note: null,
+      },
       text: String(message).trim(),
       risk: riskResult,
       category: categoryResult,
@@ -346,7 +337,6 @@ const microAction = generateMicroAction(
       analysis: analysisResult,
       emotionalContext,
       createdAt: FieldValue.serverTimestamp(),
-    
     });
 
     return res.json({
@@ -363,7 +353,7 @@ const microAction = generateMicroAction(
       interventionStrategy,
       analysis: analysisResult,
       emotionalContext,
-});
+    });
   } catch (err) {
     console.error("INTERACTION ERROR:", err);
     return res.status(500).json({
@@ -373,7 +363,7 @@ const microAction = generateMicroAction(
   }
 });
 
-app.get("/api/last", async (req, res) => {
+app.get("/api/last", requireAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
 
@@ -407,9 +397,9 @@ app.get("/api/last", async (req, res) => {
   }
 });
 
-app.get("/api/history/:uid", async (req, res) => {
+app.get("/api/history", requireAuth, async (req, res) => {
   try {
-    const { uid } = req.params;
+    const uid = req.user.uid;
 
     const snapshot = await db
       .collection("interactions")
@@ -434,7 +424,6 @@ app.get("/api/history/:uid", async (req, res) => {
     });
   } catch (error) {
     console.error("HISTORY ERROR:", error);
-
     return res.status(500).json({
       ok: false,
       error: error.message,
@@ -442,9 +431,9 @@ app.get("/api/history/:uid", async (req, res) => {
   }
 });
 
-app.get("/api/stats/:uid", async (req, res) => {
+app.get("/api/stats", requireAuth, async (req, res) => {
   try {
-    const { uid } = req.params;
+    const uid = req.user.uid;
 
     const snapshot = await db
       .collection("interactions")
@@ -476,7 +465,6 @@ app.get("/api/stats/:uid", async (req, res) => {
     });
   } catch (error) {
     console.error("STATS ERROR:", error);
-
     return res.status(500).json({
       ok: false,
       error: error.message,
@@ -484,9 +472,9 @@ app.get("/api/stats/:uid", async (req, res) => {
   }
 });
 
-app.get("/api/evolution/:uid", async (req, res) => {
+app.get("/api/evolution", requireAuth, async (req, res) => {
   try {
-    const { uid } = req.params;
+    const uid = req.user.uid;
 
     const snapshot = await db
       .collection("interactions")
@@ -544,7 +532,6 @@ app.get("/api/evolution/:uid", async (req, res) => {
     });
   } catch (error) {
     console.error("EVOLUTION ERROR:", error);
-
     return res.status(500).json({
       ok: false,
       error: error.message,
@@ -552,8 +539,8 @@ app.get("/api/evolution/:uid", async (req, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
