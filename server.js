@@ -112,12 +112,18 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     const interactionRef = db.collection("interactions").doc(interactionId);
     const existing = await interactionRef.get();
 
-    if (existing.exists) {
-      return res.json({
-        status: "blocked",
-        message: "Ya realizaste tu interacción de hoy. Volvé mañana.",
-      });
-    }
+if (existing.exists) {
+  const previousData = existing.data();
+  const previousAction =
+    previousData?.microAction?.action ||
+    "Elegí una acción pequeña y concreta para poner en práctica hoy.";
+
+  return res.json({
+    status: "blocked",
+    message:
+      `La interacción de hoy ya terminó.\n\nAcción sugerida para hoy:\n"${previousAction}"\n\nLo importante ahora es ponerla en práctica y observar qué sucede.`,
+  });
+}
 
     const userRef = db.collection("users").doc(uid);
     const snapUser = await userRef.get();
