@@ -39,11 +39,13 @@ async function requireAuth(req, res, next) {
         message: "Falta token",
       });
     }
-console.log("AUTH HEADER:", req.headers.authorization);
-console.log("TOKEN START:", token ? token.substring(0, 20) : "NO TOKEN");
-console.log("TOKEN LENGTH:", token ? token.length : 0);
+
+    console.log("AUTH HEADER:", req.headers.authorization);
+    console.log("TOKEN START:", token.substring(0, 20));
+    console.log("TOKEN LENGTH:", token.length);
 
     const decoded = await admin.auth().verifyIdToken(token);
+
     req.user = decoded;
     return next();
   } catch (err) {
@@ -66,46 +68,6 @@ app.get("/test", (req, res) => {
   });
 });
 
-app.get("/admin/ping", requireAuth, async (req, res) => {
-  try {
-    await db.collection("test").doc("ping").set({
-      ok: true,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-
-    const snap = await db.collection("test").doc("ping").get();
-
-    return res.json({
-      status: "OK",
-      data: snap.data(),
-    });
-  } catch (err) {
-    console.error("PING ERROR:", err);
-    return res.status(500).json({
-      status: "ERROR",
-      message: err.message,
-    });
-  }
-});
-
-app.get("/api/me", requireAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const snap = await db.collection("users").doc(uid).get();
-
-    return res.json({
-      status: "OK",
-      user: snap.exists ? snap.data() : null,
-    });
-  } catch (err) {
-    console.error("ME ERROR:", err);
-    return res.status(500).json({
-      status: "ERROR",
-      message: err.message,
-    });
-  }
-});
-
 app.get("/api/today", requireAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -124,60 +86,6 @@ app.get("/api/today", requireAuth, async (req, res) => {
     return res.status(500).json({
       status: "ERROR",
       message: err.message,
-    });
-  }
-});
-
-app.get("/api/summary", requireAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-
-    const snapshot = await db
-      .collection("interactions")
-      .where("uid", "==", uid)
-      .orderBy("createdAt", "desc")
-      .limit(30)
-      .get();
-
-    const interactions = [];
-
-    snapshot.forEach((doc) => {
-      interactions.push({
-        id: doc.id,
-        ...doc.data(),
-      });
-    });
-
-    const categoryCount = {};
-    let totalIntensity = 0;
-    let intensityItems = 0;
-
-    interactions.forEach((item) => {
-      const category = item?.category?.category || "general";
-      categoryCount[category] = (categoryCount[category] || 0) + 1;
-
-      if (item?.intensity?.score) {
-        totalIntensity += item.intensity.score;
-        intensityItems++;
-      }
-    });
-
-    const averageIntensity =
-      intensityItems > 0 ? totalIntensity / intensityItems : 0;
-
-    return res.json({
-      ok: true,
-      totalInteractions: interactions.length,
-      categoryCount,
-      averageIntensity,
-      latestInteraction: interactions[0] || null,
-      interactions,
-    });
-  } catch (error) {
-    console.error("SUMMARY ERROR:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "No se pudo generar el resumen.",
     });
   }
 });
@@ -274,7 +182,6 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     ).length;
 
     const hasRepeatedPattern = repeatedCategoryCount >= 3;
-
     const lastInteraction = recentHistory[0];
 
     let evolutionTrend = "stable";
@@ -362,6 +269,60 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     return res.status(500).json({
       status: "ERROR",
       message: err.message,
+    });
+  }
+});
+
+app.get("/api/summary", requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const snapshot = await db
+      .collection("interactions")
+      .where("uid", "==", uid)
+      .orderBy("createdAt", "desc")
+      .limit(30)
+      .get();
+
+    const interactions = [];
+
+    snapshot.forEach((doc) => {
+      interactions.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    const categoryCount = {};
+    let totalIntensity = 0;
+    let intensityItems = 0;
+
+    interactions.forEach((item) => {
+      const category = item?.category?.category || "general";
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+
+      if (item?.intensity?.score) {
+        totalIntensity += item.intensity.score;
+        intensityItems++;
+      }
+    });
+
+    const averageIntensity =
+      intensityItems > 0 ? totalIntensity / intensityItems : 0;
+
+    return res.json({
+      ok: true,
+      totalInteractions: interactions.length,
+      categoryCount,
+      averageIntensity,
+      latestInteraction: interactions[0] || null,
+      interactions,
+    });
+  } catch (error) {
+    console.error("SUMMARY ERROR:", error);
+    return res.status(500).json({
+      ok: false,
+      error: "No se pudo generar el resumen.",
     });
   }
 });
