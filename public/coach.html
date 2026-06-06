@@ -23,16 +23,12 @@
     }
 
     h1 {
-  font-size: 28px;
-
-  font-weight: 600;
-
-  margin-bottom: 18px;
-
-  color: #f5f7fb;
-
-  letter-spacing: -0.5px;
-}
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      color: #f5f7fb;
+      letter-spacing: -0.5px;
+    }
 
     textarea {
       width: 100%;
@@ -75,25 +71,20 @@
       white-space: pre-line;
       line-height: 1.6;
     }
+
     .signature {
-  margin-top: 28px;
-
-  color: #5b8cff;
-
-  font-size: 18px;
-
-  font-weight: 500;
-
-  opacity: 0.9;
-}
+      margin-top: 28px;
+      color: #5b8cff;
+      font-size: 18px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
   </style>
 </head>
 
-<body>
+<body style="display:none;">
   <div class="container">
-    <h1 style="display:none;">
-  Coach Diario
-</h1>
+    <h1 style="display:none;">Coach Diario</h1>
 
     <textarea
       id="message"
@@ -107,10 +98,33 @@
     <div id="response" class="response"></div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBkNfrli8ni_ozXEUt17hl-GZVjuP7rV1U",
+      authDomain: "coach-diario-v1.firebaseapp.com",
+      projectId: "coach-diario-v1",
+      appId: "1:3699793238:web:792c8acd39ad3c681a4af7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+
     const button = document.getElementById("sendButton");
     const responseDiv = document.getElementById("response");
     const messageInput = document.getElementById("message");
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      document.body.style.display = "flex";
+    });
 
     async function sendMessage() {
       const text = messageInput.value.trim();
@@ -124,21 +138,27 @@
       responseDiv.innerText = "Procesando...";
       responseDiv.style.display = "block";
 
-      document.getElementById("message").style.display = "none";
-
-      document.getElementById("sendButton").style.display = "none";
+      messageInput.style.display = "none";
+      button.style.display = "none";
       button.disabled = true;
 
       try {
+        const user = auth.currentUser;
+
+        if (!user) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        const token = await user.getIdToken(true);
+
         const res = await fetch("/api/interaction", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer TEST"
+            "Authorization": `Bearer ${token}`
           },
           body: JSON.stringify({
-            uid: "usuario_test",
-            email: "test@diario.local",
             message: text
           })
         });
@@ -148,21 +168,21 @@
 
         if (data.response && data.response.text) {
           responseDiv.innerHTML = `
-           ${data.response.text}
+${data.response.text}
 
-            <div class="signature">
-             — Coach Diario
-            </div>
+<div class="signature">
+Coach Diario
+</div>
 `;
         } else if (data.message) {
-  responseDiv.innerHTML = `
+          responseDiv.innerHTML = `
 ${data.message}
 
 <div class="signature">
 Coach Diario
 </div>
 `;
-} else {
+        } else {
           responseDiv.innerText = "No se pudo generar respuesta.";
         }
 

@@ -39,6 +39,9 @@ async function requireAuth(req, res, next) {
         message: "Falta token",
       });
     }
+console.log("AUTH HEADER:", req.headers.authorization);
+console.log("TOKEN START:", token ? token.substring(0, 20) : "NO TOKEN");
+console.log("TOKEN LENGTH:", token ? token.length : 0);
 
     const decoded = await admin.auth().verifyIdToken(token);
     req.user = decoded;
