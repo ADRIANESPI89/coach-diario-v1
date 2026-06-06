@@ -1,44 +1,131 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Coach Diario</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Coach Diario</title>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #0f1115;
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+
+  .card {
+    width: 90%;
+    max-width: 500px;
+    background: #1a1d24;
+    border-radius: 16px;
+    padding: 40px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .title {
+    font-size: 38px;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #d1d5db;
+    margin-bottom: 35px;
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-size: 17px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .login-btn:hover {
+    background: #1d4ed8;
+  }
+
+  #msg {
+    margin-top: 20px;
+    color: #9ca3af;
+  }
+
+  .footer {
+    margin-top: 35px;
+    color: #5b8cff;
+    font-size: 18px;
+  }
+</style>
 </head>
 
-<body style="font-family: Arial; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-  <div>
-    <h1>Coach Diario</h1>
-    <button id="loginBtn">Ingresar con Google</button>
-    <p id="msg"></p>
+<body>
+
+<div class="card">
+
+  <div class="title">
+    Coach Diario
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <div class="subtitle">
+    Un espacio breve para ordenar lo que te preocupa,
+    recuperar claridad y encontrar una acción posible para hoy.
+  </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBkNfrli8ni_ozXEUt17hl-GZVjuP7rV1U",
-      authDomain: "coach-diario-v1.firebaseapp.com",
-      projectId: "coach-diario-v1",
-      appId: "1:3699793238:web:792c8acd39ad3c681a4af7"
-    };
+  <button id="loginBtn" class="login-btn">
+    Ingresar con Google
+  </button>
 
-    firebase.initializeApp(firebaseConfig);
+  <p id="msg"></p>
 
-    const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const msg = document.getElementById("msg");
+  <div class="footer">
+    Claridad para avanzar
+  </div>
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
-      try {
-        msg.innerText = "Abriendo Google...";
-        await auth.signInWithPopup(provider);
-        window.location.href = "/coach.html";
-      } catch (error) {
-        msg.innerText = error.message;
-      }
-    });
-  </script>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBkNfrli8ni_ozXEUt17hl-GZVjuP7rV1U",
+    authDomain: "coach-diario-v1.firebaseapp.com",
+    projectId: "coach-diario-v1",
+    appId: "1:3699793238:web:792c8acd39ad3c681a4af7"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  const msg = document.getElementById("msg");
+
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+    try {
+      msg.innerText = "Abriendo Google...";
+
+      await auth.signInWithPopup(provider);
+
+      window.location.href = "/coach.html";
+
+    } catch (error) {
+      console.error(error);
+      msg.innerText = "No se pudo iniciar sesión.";
+    }
+  });
+</script>
+
 </body>
 </html>
