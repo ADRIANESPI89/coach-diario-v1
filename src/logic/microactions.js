@@ -1,151 +1,97 @@
+/*
+=================================================
+
+COACH DIARIO - PRINCIPIO DE MICROACCIONES
+
+Las microacciones no deben sentirse como tareas.
+
+Su objetivo principal es generar claridad,
+observación y reflexión.
+
+Priorizar preguntas humanas y conversacionales
+antes que instrucciones directivas.
+
+Evitar:
+- "elegí una sola cosa"
+- listas de tareas
+- lenguaje técnico
+- tono de productividad
+
+Objetivo:
+Claridad para avanzar.
+
+=================================================
+*/
+
 function generateMicroAction(
   category = "general",
   intensity = "baja",
   analysisResult = null
 ) {
-  const cognitiveLoad = analysisResult?.cognitiveLoad || "media";
-
-  const interventionStrategy =
-    analysisResult?.interventionStrategy || "accion simple";
-
-  if (interventionStrategy === "cortar ciclo mental") {
-    return {
-      type: "descarga",
-      action:
-        "Escribí una sola idea que esté dando vueltas en tu cabeza y dejala ahí por hoy.",
-      duration: "3 minutos",
-    };
-  }
-
-  if (
-    cognitiveLoad === "alta" &&
-    category !== "rumiacion"
-  ) {
-    return {
-      type: "regulacion",
-      action:
-        "No intentes resolver todo ahora. Elegí una sola cosa chica para hacer.",
-      duration: "5 minutos",
-    };
-  }
-
-  if (interventionStrategy === "reducir estimulos") {
-    return {
-      type: "regulacion",
-      action:
-        "Intentá alejarte unos minutos del ruido y darte un poco de espacio.",
-      duration: "10 minutos",
-    };
-  }
-
   switch (category) {
     case "economico":
-      if (intensity === "alta") {
-        return {
-          type: "regulacion",
-          action:
-            "No intentes resolver toda tu economía hoy. Elegí un solo tema económico para mirar con calma.",
-          duration: "3 minutos",
-        };
-      }
-
       return {
         type: "claridad",
         action:
-          "Anotá qué tema económico te preocupa más hoy y una acción chica que puedas hacer.",
-        duration: "5 minutos",
+          "Cuando pensás en lo económico, ¿qué es lo primero que se te viene a la mente?",
+        duration: "3 minutos",
       };
 
     case "ansiedad":
-      if (intensity === "alta") {
-        return {
-          type: "regulacion",
-          action:
-            "No hace falta resolver todo ahora. Mirá alrededor y nombrá tres cosas que veas.",
-          duration: "2 minutos",
-        };
-      }
-
       return {
-        type: "descarga",
-        action:
-          "Escribí qué es lo que más te preocupa hoy. Solo una cosa.",
+        type: "claridad",
+        action: "¿Qué es lo que más te preocupa en este momento?",
         duration: "3 minutos",
       };
 
     case "saturacion":
-      if (intensity === "alta") {
-        return {
-          type: "reduccion",
-          action:
-            "No intentes ordenar todo. Elegí una sola cosa para hacer hoy.",
-          duration: "2 minutos",
-        };
-      }
-
       return {
         type: "claridad",
-        action:
-          "Pensá qué es lo que más espacio ocupa en tu cabeza y elegí una sola prioridad.",
+        action: "¿En qué estás pensando tanto hoy?",
         duration: "3 minutos",
       };
 
     case "frustracion":
-      if (intensity === "alta") {
-        return {
-          type: "regulacion",
-          action:
-            "Por hoy no hace falta demostrar nada. Soltá una exigencia aunque sea por un rato.",
-          duration: "3 minutos",
-        };
-      }
-
       return {
-        type: "descarga",
-        action:
-          "Escribí qué fue lo que más te molestó hoy.",
+        type: "claridad",
+        action: "¿Qué te molestó de esa situación?",
         duration: "3 minutos",
       };
 
     case "desorientacion":
       return {
         type: "claridad",
-        action:
-          "Elegí una sola cosa que sí tengas clara hoy y empezá por ahí.",
-        duration: "2 minutos",
+        action: "Aunque no tengas todo claro, ¿qué sí sabés hoy?",
+        duration: "3 minutos",
       };
 
     case "rumiacion":
       return {
-        type: "descarga_mental",
-        action:
-          "Escribí una idea que se esté repitiendo mucho y dejala ahí por hoy.",
-        duration: "2 minutos",
+        type: "claridad",
+        action: "¿Sobre qué tema sentís que seguís dando vueltas?",
+        duration: "3 minutos",
       };
 
     case "indecision":
       return {
-        type: "decision_minima",
-        action:
-          "Elegí una opción posible y permitite avanzar un poco.",
-        duration: "1 minuto",
+        type: "claridad",
+        action: "¿Qué es lo que más te hace dudar?",
+        duration: "3 minutos",
       };
 
     case "agotamiento":
       return {
-        type: "pausa",
-        action:
-          "Intentá bajar el ritmo unos minutos sin intentar resolver nada.",
-        duration: "5 minutos",
+        type: "claridad",
+        action: "¿Qué es lo que más te está costando últimamente?",
+        duration: "3 minutos",
       };
 
     default:
-      return {
-        type: "micro_paso",
-        action:
-          "Elegí una sola cosa chica para hacer hoy y dejá el resto para después.",
-        duration: "3 minutos",
-      };
+  return {
+    type: "claridad",
+    action: "¿Qué fue lo más lindo de hoy?",
+    duration: "3 minutos",
+  };
   }
 }
 
