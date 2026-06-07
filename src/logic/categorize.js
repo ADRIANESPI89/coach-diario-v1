@@ -9,6 +9,29 @@ function detectCategory(text = "") {
   const t = normalizeText(text);
   console.log("CATEGORIZE ACTIVO:", t);
 
+  // Prioridad alta: económico
+  if (
+    t.includes("economico") ||
+    t.includes("economica") ||
+    t.includes("plata") ||
+    t.includes("dinero") ||
+    t.includes("pagar") ||
+    t.includes("alquiler") ||
+    t.includes("deuda") ||
+    t.includes("deudas") ||
+    t.includes("cuentas") ||
+    t.includes("factura") ||
+    t.includes("facturas") ||
+    t.includes("sueldo") ||
+    t.includes("cobrar") ||
+    t.includes("trabajo") ||
+    t.includes("llegar a fin de mes") ||
+    t.includes("situacion economica") ||
+    t.includes("problemas economicos")
+  ) {
+    return { category: "economico", matched: true };
+  }
+
   if (
     t.includes("demasiadas cosas en la cabeza") ||
     t.includes("me costo enfocarme") ||
@@ -23,14 +46,14 @@ function detectCategory(text = "") {
   }
 
   if (
-   t.includes("no pude dejar de pensar") ||
-   t.includes("dejar de pensar en lo mismo") ||
-   t.includes("pensar en lo mismo") ||
-   t.includes("durante gran parte del dia") ||
-   t.includes("pienso mucho") ||
-   t.includes("no puedo dejar de pensar") ||
-   t.includes("le doy vueltas") ||
-   t.includes("me quedo pensando")
+    t.includes("no pude dejar de pensar") ||
+    t.includes("dejar de pensar en lo mismo") ||
+    t.includes("pensar en lo mismo") ||
+    t.includes("durante gran parte del dia") ||
+    t.includes("pienso mucho") ||
+    t.includes("no puedo dejar de pensar") ||
+    t.includes("le doy vueltas") ||
+    t.includes("me quedo pensando")
   ) {
     return { category: "rumiacion", matched: true };
   }
@@ -64,34 +87,16 @@ function detectCategory(text = "") {
   }
 
   if (
-  t.includes("mi cabeza no para") ||
-  t.includes("no puedo parar de pensar") ||
-  t.includes("me cuesta bajar la preocupacion") ||
-  t.includes("estoy preocupado") ||
-  t.includes("estoy preocupada") ||
-  t.includes("me siento inquieto") ||
-  t.includes("me siento inquieta") ||
-  t.includes("estado de alerta")
-) {
-  return {
-    category: "ansiedad",
-    matched: true,
-  };
-}
-  if (
-    t.includes("economico") ||
-    t.includes("economica") ||
-    t.includes("plata") ||
-    t.includes("dinero") ||
-    t.includes("pagar") ||
-    t.includes("alquiler") ||
-    t.includes("deuda") ||
-    t.includes("deudas") ||
-    t.includes("cuentas") ||
-    t.includes("llegar a fin de mes") ||
-    t.includes("situacion economica")
+    t.includes("mi cabeza no para") ||
+    t.includes("no puedo parar de pensar") ||
+    t.includes("me cuesta bajar la preocupacion") ||
+    t.includes("estoy preocupado") ||
+    t.includes("estoy preocupada") ||
+    t.includes("me siento inquieto") ||
+    t.includes("me siento inquieta") ||
+    t.includes("estado de alerta")
   ) {
-    return { category: "economico", matched: true };
+    return { category: "ansiedad", matched: true };
   }
 
   return { category: "general", matched: false };

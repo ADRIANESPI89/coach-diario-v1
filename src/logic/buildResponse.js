@@ -61,10 +61,9 @@ function buildResponse(
   let repeatedText = "";
 
   if (hasRepeatedPattern) {
-    repeatedText =
-      "\n\nEste tema ya apareció varias veces estos días. No significa que estés fallando; puede ser una señal de que merece ser mirado con un poco más de atención.";
-  }
-
+  repeatedText =
+    "\n\nEste tema ya apareció varias veces estos días. Que vuelva a aparecer no significa que estés retrocediendo. Puede ser una señal de que todavía necesita algo de espacio, claridad o atención.";
+}
   let trendText = "";
 
   if (evolutionTrend === "better") {
