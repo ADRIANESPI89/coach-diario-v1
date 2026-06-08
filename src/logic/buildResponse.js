@@ -44,8 +44,8 @@ function buildResponse(
       break;
 
     default:
-      intro = "";
-      break;
+  intro = "Parece que hoy hay algo de calma en lo que contás.";
+  break;
   }
 
   return {

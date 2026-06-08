@@ -87,11 +87,11 @@ function generateMicroAction(
       };
 
     default:
-      return {
-        type: "claridad",
-        action: "¿Qué fue lo más lindo de hoy?",
-        duration: "3 minutos",
-      };
+  return {
+    type: "claridad",
+    action: "¿Qué creés que ayudó a que hoy te sintieras así?",
+    duration: "3 minutos",
+  };
   }
 }
 

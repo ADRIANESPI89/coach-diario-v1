@@ -114,14 +114,14 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
 
 if (existing.exists) {
   const previousData = existing.data();
-  const previousAction =
+  const previousResponse =
+    previousData?.response?.text ||
     previousData?.microAction?.action ||
-    "Elegí una acción pequeña y concreta para poner en práctica hoy.";
+    "Volvé a mirar la pregunta de hoy.";
 
   return res.json({
     status: "blocked",
-    message:
-  `La interacción de hoy ya terminó.\n\nAcción sugerida para hoy:\n"${previousAction}"\n\nCon una sola acción es suficiente por hoy. Lo importante ahora es ponerla en práctica y observar qué sucede.`,
+    message: previousResponse,
   });
 }
 
