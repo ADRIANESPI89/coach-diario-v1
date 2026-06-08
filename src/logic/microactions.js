@@ -30,12 +30,12 @@ function generateMicroAction(
 ) {
   switch (category) {
     case "economico":
-      return {
-        type: "claridad",
-        action:
-          "Cuando pensás en lo económico, ¿qué es lo primero que se te viene a la mente?",
-        duration: "3 minutos",
-      };
+  return {
+    type: "claridad",
+    action:
+      "Cuando pensás en lo económico, ¿qué es lo que más te preocupa hoy?",
+    duration: "3 minutos",
+  };
 
     case "ansiedad":
       return {
@@ -45,11 +45,11 @@ function generateMicroAction(
       };
 
     case "saturacion":
-      return {
-        type: "claridad",
-        action: "¿En qué estás pensando tanto hoy?",
-        duration: "3 minutos",
-      };
+  return {
+    type: "claridad",
+    action: "Si tuvieras que nombrar una sola preocupación de hoy, ¿cuál sería?",
+    duration: "3 minutos",
+  };
 
     case "frustracion":
       return {
@@ -87,11 +87,11 @@ function generateMicroAction(
       };
 
     default:
-  return {
-    type: "claridad",
-    action: "¿Qué fue lo más lindo de hoy?",
-    duration: "3 minutos",
-  };
+      return {
+        type: "claridad",
+        action: "¿Qué fue lo más lindo de hoy?",
+        duration: "3 minutos",
+      };
   }
 }
 

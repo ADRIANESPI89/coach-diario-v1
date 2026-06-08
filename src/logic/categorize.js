@@ -9,7 +9,6 @@ function detectCategory(text = "") {
   const t = normalizeText(text);
   console.log("CATEGORIZE ACTIVO:", t);
 
-  // Prioridad alta: económico
   if (
     t.includes("economico") ||
     t.includes("economica") ||
@@ -59,6 +58,22 @@ function detectCategory(text = "") {
   }
 
   if (
+  t.includes("estoy molesto") ||
+  t.includes("estoy molesta") ||
+  t.includes("me molesto") ||
+  t.includes("me molesto por") ||
+  t.includes("me molestó") ||
+  t.includes("me frustró") ||
+  t.includes("me frustro") ||
+  t.includes("estoy frustrado") ||
+  t.includes("estoy frustrada") ||
+  t.includes("no salio como esperaba") ||
+  t.includes("no salió como esperaba")
+) {
+  return { category: "frustracion", matched: true };
+}
+
+  if (
     t.includes("no se que hacer") ||
     t.includes("estoy perdido") ||
     t.includes("estoy perdida") ||
@@ -70,6 +85,8 @@ function detectCategory(text = "") {
   if (
     t.includes("no puedo decidir") ||
     t.includes("no se que elegir") ||
+    t.includes("no se que decision tomar") ||
+    t.includes("que decision tomar") ||
     t.includes("tengo dudas") ||
     t.includes("no me decido")
   ) {

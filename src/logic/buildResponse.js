@@ -44,35 +44,15 @@ function buildResponse(
       break;
 
     default:
-      intro = "Gracias por tomarte este momento para registrar cómo estás.";
+      intro = "";
       break;
   }
 
-  let repeatedText = "";
-
-  if (hasRepeatedPattern) {
-    repeatedText =
-      "\n\nEste tema ya apareció varias veces estos días. Que vuelva a aparecer no significa que estés retrocediendo. Puede ser una señal de que todavía necesita algo de espacio, claridad o atención.";
-  }
-
-  let trendText = "";
-
-  if (evolutionTrend === "better") {
-    trendText =
-      "\n\nComparado con días anteriores, hoy parece haber un poco menos de presión.";
-  }
-
-  if (evolutionTrend === "worse") {
-    trendText =
-      "\n\nComparado con días anteriores, hoy parece haber un poco más de presión.";
-  }
-
   return {
-    text: `${intro}${repeatedText}${trendText}
+    text: [intro, microAction.action]
+      .filter((part) => part && part.trim() !== "")
+      .join("\n\n"),
 
-${microAction.action}
-
-A veces una pregunta alcanza para ver algo que hasta ahora no estaba tan claro.`,
     shouldStopInteraction: true,
     hasRepeatedPattern,
     evolutionTrend,

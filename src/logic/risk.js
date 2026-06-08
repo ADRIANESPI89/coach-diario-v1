@@ -46,7 +46,6 @@ const RISK_PATTERNS = [
       "estoy muy triste",
       "estoy desbordado",
       "estoy desbordada",
-      "no se que hacer"
     ]
   }
 ];
