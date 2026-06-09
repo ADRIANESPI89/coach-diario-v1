@@ -5,118 +5,262 @@ function normalizeText(text) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+const CATEGORY_PATTERNS = {
+  economico: [
+    "economico",
+    "economica",
+    "plata",
+    "dinero",
+    "guita",
+    "sueldo",
+    "ingresos",
+    "gastos",
+    "deuda",
+    "deudas",
+    "alquiler",
+    "cuentas",
+    "factura",
+    "facturas",
+    "prestamo",
+    "prestamos",
+    "finanzas",
+    "cobrar",
+    "pagar",
+    "no llego a fin de mes",
+    "llegar a fin de mes",
+    "situacion economica",
+    "problemas economicos"
+  ],
+
+  ansiedad: [
+    "ansiedad",
+    "ansioso",
+    "ansiosa",
+    "angustia",
+    "angustiado",
+    "angustiada",
+    "me siento angustiado",
+    "me siento angustiada",
+    "preocupado",
+    "preocupada",
+    "preocupacion",
+    "inquieto",
+    "inquieta",
+    "nervioso",
+    "nerviosa",
+    "miedo",
+    "temor",
+    "alerta",
+    "mi cabeza no para",
+    "no puedo relajarme",
+    "no puedo desconectarme",
+    "me cuesta calmarme",
+    "me cuesta dormir",
+    "me cuesta bajar un cambio",
+    "sobrepensando",
+    "estoy preocupado",
+    "estoy preocupada"
+  ],
+
+  saturacion: [
+    "abrumado",
+    "abrumada",
+    "saturado",
+    "saturada",
+    "sobrecargado",
+    "sobrecargada",
+    "sobrepasado",
+    "sobrepasada",
+    "muchas cosas",
+    "demasiadas cosas",
+    "tengo muchas cosas",
+    "no doy abasto",
+    "no llego con todo",
+    "tengo demasiado encima",
+    "muchas cosas encima",
+    "no me alcanza la cabeza",
+    "me cuesta enfocarme",
+    "me costo enfocarme",
+    "desbordado",
+    "desbordada",
+    "agotado mentalmente",
+    "me ocupa la cabeza"
+  ],
+
+  rumiacion: [
+    "le doy vueltas",
+    "dar vueltas",
+    "pienso mucho",
+    "pensando demasiado",
+    "no puedo dejar de pensar",
+    "sigo pensando",
+    "vuelvo al mismo tema",
+    "me quedo pensando",
+    "me quede pensando",
+    "no puedo soltarlo",
+    "me persigue",
+    "pensamiento repetitivo",
+    "obsesionado",
+    "obsesionada",
+    "no sale de mi cabeza",
+    "vuelve una y otra vez",
+    "siempre termino pensando",
+    "me engancho con eso",
+    "me quedo trabado",
+    "rumiando"
+  ],
+
+  frustracion: [
+    "frustrado",
+    "frustrada",
+    "molesto",
+    "molesta",
+    "enojado",
+    "enojada",
+    "bronca",
+    "enojo",
+    "rabia",
+    "impotencia",
+    "me molesto",
+    "me frustro",
+    "salio mal",
+    "no salio como esperaba",
+    "me decepciono",
+    "me fastidia",
+    "me fastidio",
+    "estoy harto",
+    "estoy harta"
+  ],
+
+  desorientacion: [
+    "no se que hacer",
+    "estoy perdido",
+    "estoy perdida",
+    "desorientado",
+    "desorientada",
+    "sin rumbo",
+    "no encuentro rumbo",
+    "no encuentro direccion",
+    "no tengo claro",
+    "estoy confundido",
+    "estoy confundida",
+    "no se por donde empezar",
+    "no veo el camino",
+    "no encuentro una salida",
+    "no se para donde ir",
+    "estoy a la deriva",
+    "no tengo direccion",
+    "sin orientacion",
+    "no encuentro claridad",
+    "estoy bloqueado",
+    "estoy bloqueada"
+  ],
+
+  indecision: [
+    "no puedo decidir",
+    "no me decido",
+    "tengo dudas",
+    "duda",
+    "dudas",
+    "decision",
+    "decidir",
+    "elegir",
+    "eleccion",
+    "estoy entre dos opciones",
+    "no logro decidirme",
+    "no se que elegir",
+    "no se que decision tomar",
+    "que decision tomar",
+    "me cuesta decidir",
+    "indeciso",
+    "indecisa",
+    "cambiar de idea",
+    "opciones",
+    "alternativas",
+    "elegir un camino"
+  ],
+
+  agotamiento: [
+    "agotado",
+    "agotada",
+    "cansado",
+    "cansada",
+    "sin energia",
+    "no doy mas",
+    "desgastado",
+    "desgastada",
+    "exhausto",
+    "exhausta",
+    "me cuesta seguir",
+    "sin fuerzas",
+    "quemado",
+    "quemada",
+    "agotamiento",
+    "fatigado",
+    "fatigada",
+    "no puedo mas",
+    "estoy destruido",
+    "estoy destruida"
+  ]
+};
+
+const CATEGORY_PRIORITY = [
+  "economico",
+  "ansiedad",
+  "saturacion",
+  "rumiacion",
+  "frustracion",
+  "desorientacion",
+  "indecision",
+  "agotamiento"
+];
+
 function detectCategory(text = "") {
   const t = normalizeText(text);
   console.log("CATEGORIZE ACTIVO:", t);
 
-  if (
-    t.includes("economico") ||
-    t.includes("economica") ||
-    t.includes("plata") ||
-    t.includes("dinero") ||
-    t.includes("pagar") ||
-    t.includes("alquiler") ||
-    t.includes("deuda") ||
-    t.includes("deudas") ||
-    t.includes("cuentas") ||
-    t.includes("factura") ||
-    t.includes("facturas") ||
-    t.includes("sueldo") ||
-    t.includes("cobrar") ||
-    t.includes("trabajo") ||
-    t.includes("llegar a fin de mes") ||
-    t.includes("situacion economica") ||
-    t.includes("problemas economicos")
-  ) {
-    return { category: "economico", matched: true };
+  const scores = {};
+  const matches = {};
+
+  for (const category of CATEGORY_PRIORITY) {
+    scores[category] = 0;
+    matches[category] = [];
+
+    for (const pattern of CATEGORY_PATTERNS[category]) {
+      const normalizedPattern = normalizeText(pattern);
+
+      if (t.includes(normalizedPattern)) {
+        scores[category] += normalizedPattern.split(" ").length > 1 ? 2 : 1;
+        matches[category].push(pattern);
+      }
+    }
   }
 
-  if (
-    t.includes("demasiadas cosas en la cabeza") ||
-    t.includes("me costo enfocarme") ||
-    t.includes("me cuesta enfocarme") ||
-    t.includes("estoy saturado") ||
-    t.includes("estoy saturada") ||
-    t.includes("tengo muchas cosas") ||
-    t.includes("muchas cosas en la cabeza") ||
-    t.includes("me ocupa mucho la cabeza")
-  ) {
-    return { category: "saturacion", matched: true };
+  let bestCategory = "general";
+  let bestScore = 0;
+
+  for (const category of CATEGORY_PRIORITY) {
+    if (scores[category] > bestScore) {
+      bestCategory = category;
+      bestScore = scores[category];
+    }
   }
 
-  if (
-    t.includes("no pude dejar de pensar") ||
-    t.includes("dejar de pensar en lo mismo") ||
-    t.includes("pensar en lo mismo") ||
-    t.includes("durante gran parte del dia") ||
-    t.includes("pienso mucho") ||
-    t.includes("no puedo dejar de pensar") ||
-    t.includes("le doy vueltas") ||
-    t.includes("me quedo pensando")
-  ) {
-    return { category: "rumiacion", matched: true };
+  if (bestScore === 0) {
+    return {
+      category: "general",
+      matched: false,
+      matchedPhrase: null,
+      score: 0
+    };
   }
 
-  if (
-  t.includes("estoy molesto") ||
-  t.includes("estoy molesta") ||
-  t.includes("me molesto") ||
-  t.includes("me molesto por") ||
-  t.includes("me molestó") ||
-  t.includes("me frustró") ||
-  t.includes("me frustro") ||
-  t.includes("estoy frustrado") ||
-  t.includes("estoy frustrada") ||
-  t.includes("no salio como esperaba") ||
-  t.includes("no salió como esperaba")
-) {
-  return { category: "frustracion", matched: true };
-}
-
-  if (
-    t.includes("no se que hacer") ||
-    t.includes("estoy perdido") ||
-    t.includes("estoy perdida") ||
-    t.includes("no encuentro rumbo")
-  ) {
-    return { category: "desorientacion", matched: true };
-  }
-
-  if (
-    t.includes("no puedo decidir") ||
-    t.includes("no se que elegir") ||
-    t.includes("no se que decision tomar") ||
-    t.includes("que decision tomar") ||
-    t.includes("tengo dudas") ||
-    t.includes("no me decido")
-  ) {
-    return { category: "indecision", matched: true };
-  }
-
-  if (
-    t.includes("estoy cansado") ||
-    t.includes("estoy cansada") ||
-    t.includes("estoy agotado") ||
-    t.includes("estoy agotada") ||
-    t.includes("no doy mas")
-  ) {
-    return { category: "agotamiento", matched: true };
-  }
-
-  if (
-    t.includes("mi cabeza no para") ||
-    t.includes("no puedo parar de pensar") ||
-    t.includes("me cuesta bajar la preocupacion") ||
-    t.includes("estoy preocupado") ||
-    t.includes("estoy preocupada") ||
-    t.includes("me siento inquieto") ||
-    t.includes("me siento inquieta") ||
-    t.includes("estado de alerta")
-  ) {
-    return { category: "ansiedad", matched: true };
-  }
-
-  return { category: "general", matched: false };
+  return {
+    category: bestCategory,
+    matched: true,
+    matchedPhrase: matches[bestCategory][0] || null,
+    score: bestScore
+  };
 }
 
 module.exports = { detectCategory };
