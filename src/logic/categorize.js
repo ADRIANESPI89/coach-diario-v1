@@ -201,6 +201,27 @@ const CATEGORY_PATTERNS = {
     "no puedo mas",
     "estoy destruido",
     "estoy destruida"
+  ],
+
+  positivo: [
+    "bien",
+    "me siento bien",
+    "estoy bien",
+    "en paz",
+    "tranquilo",
+    "tranquila",
+    "calma",
+    "calmado",
+    "calmada",
+    "contento",
+    "contenta",
+    "feliz",
+    "alegre",
+    "agradecido",
+    "agradecida",
+    "me siento en paz",
+    "hoy estoy bien",
+    "hoy me siento bien"
   ]
 };
 
@@ -212,7 +233,8 @@ const CATEGORY_PRIORITY = [
   "frustracion",
   "desorientacion",
   "indecision",
-  "agotamiento"
+  "agotamiento",
+  "positivo"
 ];
 
 function detectCategory(text = "") {

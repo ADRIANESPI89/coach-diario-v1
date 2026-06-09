@@ -40,7 +40,6 @@ async function requireAuth(req, res, next) {
       });
     }
 
-    console.log("AUTH HEADER:", req.headers.authorization);
     console.log("TOKEN START:", token.substring(0, 20));
     console.log("TOKEN LENGTH:", token.length);
 
@@ -112,18 +111,18 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     const interactionRef = db.collection("interactions").doc(interactionId);
     const existing = await interactionRef.get();
 
-if (existing.exists) {
-  const previousData = existing.data();
-  const previousResponse =
-    previousData?.response?.text ||
-    previousData?.microAction?.action ||
-    "Volvé a mirar la pregunta de hoy.";
+    if (existing.exists) {
+      const previousData = existing.data();
+      const previousResponse =
+        previousData?.response?.text ||
+        previousData?.microAction?.action ||
+        "Volvé a mirar la pregunta de hoy.";
 
-  return res.json({
-    status: "blocked",
-    message: previousResponse,
-  });
-}
+      return res.json({
+        status: "blocked",
+        message: previousResponse,
+      });
+    }
 
     const userRef = db.collection("users").doc(uid);
     const snapUser = await userRef.get();
@@ -168,6 +167,22 @@ if (existing.exists) {
     }
 
     const categoryResult = detectCategory(message);
+
+    const needsClarification =
+      categoryResult.category === "general" && !categoryResult.matched;
+
+    if (needsClarification) {
+  return res.json({
+    status: "NEEDS_CLARIFICATION",
+    ok: true,
+    response: {
+      text:
+        "Todavía estoy aprendiendo a entender distintas formas de expresar lo que te pasa.\n\n¿Podrías contarlo con un poco más de detalle o usando una frase más completa?\n\nPor ejemplo:\n• Estoy preocupado por...\n• Me cuesta...\n• No puedo dejar de pensar en...\n• No sé qué decisión tomar.",
+      shouldStopInteraction: false,
+    },
+  });
+}
+
     const intensityResult = detectIntensity(message);
 
     const evolutionSnapshot = await db

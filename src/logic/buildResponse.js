@@ -43,9 +43,13 @@ function buildResponse(
       intro = "Parece que venís sosteniendo bastante y el desgaste ya se siente.";
       break;
 
+    case "positivo":
+      intro = "Parece que hoy hay algo de calma en lo que contás.";
+      break;
+
     default:
-  intro = "Parece que hoy hay algo de calma en lo que contás.";
-  break;
+      intro = "";
+      break;
   }
 
   return {
