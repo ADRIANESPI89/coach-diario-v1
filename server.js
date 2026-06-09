@@ -112,17 +112,19 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     const existing = await interactionRef.get();
 
     if (existing.exists) {
-      const previousData = existing.data();
-      const previousResponse =
-        previousData?.response?.text ||
-        previousData?.microAction?.action ||
-        "Volvé a mirar la pregunta de hoy.";
+  const previousData = existing.data();
 
-      return res.json({
-        status: "blocked",
-        message: previousResponse,
-      });
-    }
+  const previousResponse =
+    previousData?.response?.text ||
+    previousData?.microAction?.action ||
+    "";
+
+  return res.json({
+    status: "blocked",
+    message:
+  `Tu reflexión de hoy:\n\n${previousResponse}\n\nA veces una pregunta sigue trabajando incluso después de haberla leído.\n\n— Coach Diario`,
+  });
+}
 
     const userRef = db.collection("users").doc(uid);
     const snapUser = await userRef.get();

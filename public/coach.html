@@ -107,21 +107,25 @@
     const responseDiv = document.getElementById("response");
     const messageInput = document.getElementById("message");
 
-    function showDailyClosedMessage() {
-      messageInput.style.display = "none";
-      button.style.display = "none";
-
-      responseDiv.innerHTML = `
-Ya realizaste tu interacción de hoy.
-
-Con que elijas una de las acciones propuestas y la lleves a algo concreto, ya estás generando movimiento.
-
-<div class="signature">
-Coach Diario
-</div>
-`;
-      responseDiv.style.display = "block";
+    function escapeHTML(text = "") {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
+
+    function showDailyClosedMessage(message = "") {
+  messageInput.style.display = "none";
+  button.style.display = "none";
+
+  const safeMessage = escapeHTML(message || "Volvé a mirar la pregunta de hoy.");
+
+  responseDiv.innerHTML = safeMessage;
+
+  responseDiv.style.display = "block";
+}
 
     function showForm() {
       messageInput.style.display = "block";
@@ -150,7 +154,20 @@ Coach Diario
         const data = await res.json();
 
         if (data.status === "OK" && data.canInteract === false) {
-          showDailyClosedMessage();
+          const interactionRes = await fetch("/api/interaction", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              message: "ver interaccion de hoy"
+            })
+          });
+
+          const interactionData = await interactionRes.json();
+
+          showDailyClosedMessage(interactionData.message);
           return;
         }
 
@@ -202,9 +219,27 @@ Coach Diario
         const data = await res.json();
         console.log(data);
 
+        if (
+          data.status === "NEEDS_CLARIFICATION" &&
+          data.response &&
+          data.response.text
+        ) {
+          responseDiv.innerHTML = `
+${escapeHTML(data.response.text)}
+
+<div class="signature">
+Coach Diario
+</div>
+`;
+          messageInput.style.display = "block";
+          button.style.display = "block";
+          button.disabled = false;
+          return;
+        }
+
         if (data.response && data.response.text) {
           responseDiv.innerHTML = `
-${data.response.text}
+${escapeHTML(data.response.text)}
 
 <div class="signature">
 Coach Diario
@@ -212,7 +247,7 @@ Coach Diario
 `;
         } else if (data.message) {
           responseDiv.innerHTML = `
-${data.message}
+${escapeHTML(data.message)}
 
 <div class="signature">
 Coach Diario
