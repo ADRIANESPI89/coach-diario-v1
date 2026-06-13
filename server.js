@@ -169,7 +169,25 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
     }
 
     const categoryResult = detectCategory(message);
+const categoryResult = detectCategory(message);
 
+// Guardar mensajes que el sistema no pudo categorizar bien
+if (
+  categoryResult.category === "general" &&
+  String(message).trim().length > 20
+) {
+  await db.collection("unknownMessages").add({
+    uid,
+    email,
+    date: today,
+    text: String(message).trim(),
+    detectedCategory: categoryResult.category,
+    matched: categoryResult.matched || false,
+    matchedPhrase: categoryResult.matchedPhrase || null,
+    score: categoryResult.score || 0,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
     const needsClarification =
       categoryResult.category === "general" && !categoryResult.matched;
 
