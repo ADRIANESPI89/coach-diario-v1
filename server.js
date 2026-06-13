@@ -168,7 +168,6 @@ app.post("/api/interaction", requireAuth, async (req, res) => {
       });
     }
 
-    const categoryResult = detectCategory(message);
 const categoryResult = detectCategory(message);
 
 // Guardar mensajes que el sistema no pudo categorizar bien
