@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coach Diario</title>
+  <title>Adri</title>
 
   <style>
     body {
@@ -21,6 +21,18 @@
       width: 90%;
       max-width: 500px;
     }
+
+h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.intro {
+  color: #cbd5e1;
+  font-size: 18px;
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
 
     textarea {
       width: 100%;
@@ -76,9 +88,16 @@
 
 <body>
   <div class="container">
+
+    <h1>Hola, soy Adri.</h1>
+
+    <p class="intro">
+      Estoy para ayudarte a ordenar ideas y encontrar un poco más de claridad.
+    </p>
+
     <textarea
       id="message"
-      placeholder="Escribí cómo te sentís hoy..."
+      placeholder="Contame qué está ocupando más espacio en tu cabeza hoy..."
     ></textarea>
 
     <button id="sendButton" type="button">
@@ -228,7 +247,7 @@
 ${escapeHTML(data.response.text)}
 
 <div class="signature">
-Coach Diario
+Adri
 </div>
 `;
           messageInput.style.display = "block";

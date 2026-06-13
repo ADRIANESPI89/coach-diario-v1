@@ -177,6 +177,14 @@ const CATEGORY_PATTERNS = {
     "cambiar de idea",
     "opciones",
     "alternativas",
+    "no se si",
+    "no sé si",
+    "dudo",
+    "tengo dudas",
+    "no estoy seguro",
+    "no estoy segura",
+    "no sé si estoy",
+    "no se si estoy",
     "elegir un camino"
   ],
 
@@ -204,25 +212,18 @@ const CATEGORY_PATTERNS = {
   ],
 
   positivo: [
-    "bien",
-    "me siento bien",
-    "estoy bien",
-    "en paz",
-    "tranquilo",
-    "tranquila",
-    "calma",
-    "calmado",
-    "calmada",
-    "contento",
-    "contenta",
-    "feliz",
-    "alegre",
-    "agradecido",
-    "agradecida",
-    "me siento en paz",
-    "hoy estoy bien",
-    "hoy me siento bien"
-  ]
+  "estoy bien",
+  "me siento bien",
+  "hoy estoy bien",
+  "todo bien",
+  "me encuentro bien",
+  "estoy tranquilo",
+  "estoy tranquila",
+  "me siento tranquilo",
+  "me siento tranquila",
+  "estoy mejor",
+  "me siento mejor"
+],
 };
 
 const CATEGORY_PRIORITY = [
